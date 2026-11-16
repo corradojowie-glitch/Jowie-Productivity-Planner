@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eisenhower Matrix Daily Productivity Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons for crisp UI icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        obsidian: {
+                            bg: '#0B0F19',
+                            surface: '#111827',
+                            elevated: '#161F33',
+                            border: '#1E293B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom subtle scrollbar for dark & light modes */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        /* Drag-and-drop highlight transition */
+        .quadrant-dropzone {
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .dark .quadrant-dropzone.drag-over {
+            background-color: rgba(37, 99, 235, 0.12) !important;
+            border-color: #3B82F6 !important;
+            box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.35), 0 0 25px rgba(59, 130, 246, 0.15);
+        }
+        .quadrant-dropzone.drag-over {
+            background-color: #EFF6FF !important;
+            border-color: #3B82F6 !important;
+            box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-obsidian-bg text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen transition-colors duration-200 selection:bg-blue-500/30 selection:text-blue-200">
+
+    <!-- Toast Notification Container (Replaces alert/confirm) -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4">
+
+        <!-- Top Header & Command Center Bar -->
+        <header class="bg-white dark:bg-obsidian-surface/95 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-obsidian-border shadow-sm dark:shadow-xl dark:shadow-black/20 p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25">
+                    <i class="ph-bold ph-grid-four text-2xl"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">Eisenhower Productivity Command</h1>
+                        <span id="currentDateBadge" class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/80">
+                            <i class="ph ph-calendar-blank text-blue-500 dark:text-blue-400"></i>
+                            <span id="currentDateText">Loading date...</span>
+                        </span>
+                        <span id="streakBadge" class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25" title="Completed tasks archived across daily rollovers">
+                            <i class="ph-fill ph-fire text-amber-500"></i>
+                            <span id="lifetimeCompletedText">0 All-Time Done</span>
+                        </span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                        Press <kbd class="px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded">N</kbd> to quick-add • <kbd class="px-1.5 py-0.5 text-[11px] font-mono bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded">1–4</kbd> to set quadrant • Auto-saved locally.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Buttons (Daily Rollover, Automation Rules, Backup, Theme, Embed) -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="clearSamplesBtn" onclick="app.clearSampleTasks()" class="hidden inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-sparkle"></i>
+                    <span>Clear Samples</span>
+                </button>
+
+                <button onclick="app.requestDailyRollover()" title="Archive completed tasks, promote aged Q2 tasks to Q1, and auto-flag stale Q4 items" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-sun-horizon text-sm"></i>
+                    <span>New Day Rollover</span>
+                </button>
+
+                <button onclick="app.toggleAutomationDrawer()" title="Configure Smart Automations" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-magic-wand text-blue-500 dark:text-blue-400 text-sm"></i>
+                    <span>Automations</span>
+                </button>
+
+                <button onclick="app.exportJSON()" title="Download JSON Backup" class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i class="ph ph-download-simple text-sm"></i>
+                    <span class="hidden sm:inline">Export</span>
+                </button>
+
+                <label title="Import JSON Backup" class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i class="ph ph-upload-simple text-sm"></i>
+                    <span class="hidden sm:inline">Import</span>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="app.importJSON(event)">
+                </label>
+
+                <button onclick="app.toggleTheme()" id="themeToggleBtn" title="Switch Dark / Light Mode" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-amber-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i id="themeIcon" class="ph-bold ph-sun text-base"></i>
+                </button>
+
+                <button onclick="app.toggleEmbedModal(true)" class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/25 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-code"></i>
+                    <span>Embed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Collapsible Automation & Bulk Shortcuts Drawer -->
+        <section id="automationDrawer" class="hidden bg-white dark:bg-obsidian-surface rounded-2xl border border-blue-200 dark:border-blue-500/30 shadow-sm dark:shadow-lg dark:shadow-blue-950/20 p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <i class="ph-bold ph-robot text-blue-500 text-lg"></i>
+                    <h2 class="text-sm font-bold text-slate-900 dark:text-white">Smart Workflow Automations &amp; Bulk Actions</h2>
+                </div>
+                <button onclick="app.toggleAutomationDrawer()" class="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white cursor-pointer">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <!-- Rule 1: Smart Keyword Auto-Categorizer -->
+                <label class="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 cursor-pointer">
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">Auto-Categorize by Keywords</p>
+                        <p class="text-slate-500 dark:text-slate-400 mt-0.5">Automatically selects Q1–Q4 as you type words like <em>urgent, plan, delegate,</em> or <em>someday</em>.</p>
+                    </div>
+                    <input type="checkbox" id="ruleAutoCategorize" onchange="app.toggleRule('autoCategorize', this.checked)" class="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer">
+                </label>
+
+                <!-- Rule 2: Auto-Flag Q4 for Deletion -->
+                <label class="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 cursor-pointer">
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">Auto-Flag Q4 for Deletion</p>
+                        <p class="text-slate-500 dark:text-slate-400 mt-0.5">Any task added or moved to Quadrant 4 is automatically queued with <em>For Deletion</em> status.</p>
+                    </div>
+                    <input type="checkbox" id="ruleAutoDeleteQ4" onchange="app.toggleRule('autoDeleteQ4', this.checked)" class="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer">
+                </label>
+
+                <!-- Rule 3: Auto-Start Focus on Q1 -->
+                <label class="flex items-start justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 cursor-pointer">
+                    <div>
+                        <p class="font-semibold text-slate-900 dark:text-slate-100">Auto-Start Q1 Tasks</p>
+                        <p class="text-slate-500 dark:text-slate-400 mt-0.5">New Q1 (Do First) tasks automatically start as <em>In Progress</em> if no other Q1 task is active.</p>
+                    </div>
+                    <input type="checkbox" id="ruleAutoStartQ1" onchange="app.toggleRule('autoStartQ1', this.checked)" class="mt-0.5 w-4 h-4 accent-blue-600 rounded cursor-pointer">
+                </label>
+            </div>
+
+            <!-- One-Click Bulk Automation Actions -->
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">Quick Batch Actions:</span>
+                <button onclick="app.bulkActivateQ1()" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/25 hover:bg-rose-500/20 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-play"></i>
+                    <span>Move All Q1 "To Do" &rarr; In Progress</span>
+                </button>
+                <button onclick="app.bulkFlagQ4ForDeletion()" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-300/70 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-tag"></i>
+                    <span>Flag All Q4 Tasks "For Deletion"</span>
+                </button>
+                <button onclick="app.requestPurgeDeleted()" class="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-rose-600/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-600/25 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-trash"></i>
+                    <span>Purge All Marked for Deletion</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Next Best Action & Built-In 25-Min Focus Timer Spotlight -->
+        <section aria-label="Next Best Action Spotlight" class="bg-gradient-to-r from-slate-900 via-[#111827] to-[#131C31] dark:from-[#0F172A] dark:via-[#111827] dark:to-[#172038] text-white rounded-2xl border border-slate-800 dark:border-blue-500/25 shadow-md dark:shadow-xl dark:shadow-black/30 p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+            <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                <div class="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-400/30 text-blue-400 flex items-center justify-center shrink-0">
+                    <i class="ph-fill ph-target text-xl"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Next Best Action</span>
+                        <span id="spotlightQuadrantBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Q1 • Do First</span>
+                    </div>
+                    <p id="spotlightTaskTitle" class="text-sm sm:text-base font-semibold text-white truncate mt-0.5">All caught up! Add a priority task below.</p>
+                </div>
+            </div>
+
+            <!-- Spotlight Controls: Complete Now + Built-in Pomodoro Timer -->
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button id="spotlightCompleteBtn" onclick="app.completeSpotlightTask()" class="hidden inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-check-circle"></i>
+                    <span>Complete Now</span>
+                </button>
+
+                <!-- Built-In 25-Min Focus Timer -->
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800">
+                    <i class="ph-bold ph-timer text-blue-400 text-sm"></i>
+                    <span id="pomodoroDisplay" class="font-mono text-sm font-bold text-slate-100 tracking-wider">25:00</span>
+                    <button id="pomodoroToggleBtn" onclick="app.togglePomodoro()" class="text-xs font-semibold px-2 py-0.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer">
+                        Start
+                    </button>
+                    <button onclick="app.resetPomodoro()" title="Reset 25:00 Timer" class="text-slate-400 hover:text-white transition-colors cursor-pointer">
+                        <i class="ph-bold ph-arrow-counter-clockwise text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 1: Top Productivity Dashboard -->
+        <section aria-label="Productivity Metrics Dashboard" class="space-y-3">
+            <!-- 4 Interactive Status Metric Cards (Click to filter) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <!-- Card 1: Total Tasks -->
+                <div onclick="app.setFilter('all')" class="bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-200/90 dark:border-obsidian-border hover:border-slate-400 dark:hover:border-slate-600 p-4 shadow-sm dark:shadow-lg dark:shadow-black/20 flex flex-col justify-between transition-all cursor-pointer">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Tasks</span>
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
+                            <i class="ph-bold ph-list-checks text-base"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="statTotal" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">0</span>
+                        <span id="statTodoSub" class="text-xs font-medium text-slate-500 dark:text-slate-400">0 To Do</span>
+                    </div>
+                    <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div id="barTotal" class="bg-slate-700 dark:bg-slate-300 h-1.5 rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Card 2: In Progress -->
+                <div onclick="app.setFilter('in_progress')" class="bg-white dark:bg-obsidian-surface rounded-2xl border border-blue-200/80 dark:border-blue-500/25 hover:border-blue-400 dark:hover:border-blue-500/60 p-4 shadow-sm dark:shadow-lg dark:shadow-black/20 flex flex-col justify-between transition-all cursor-pointer">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">In Progress</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                            <i class="ph-bold ph-spinner-gap text-base"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="statInProgress" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">0</span>
+                        <span id="pctInProgress" class="text-xs font-semibold text-blue-600 dark:text-blue-400">0%</span>
+                    </div>
+                    <div class="mt-3 w-full bg-blue-50 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
+                        <div id="barInProgress" class="bg-blue-600 dark:bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Completed -->
+                <div onclick="app.setFilter('completed')" class="bg-white dark:bg-obsidian-surface rounded-2xl border border-emerald-200/80 dark:border-emerald-500/25 hover:border-emerald-400 dark:hover:border-emerald-500/60 p-4 shadow-sm dark:shadow-lg dark:shadow-black/20 flex flex-col justify-between transition-all cursor-pointer">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Completed</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                            <i class="ph-bold ph-check-circle text-base"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="statCompleted" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">0</span>
+                        <span id="pctCompleted" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">0%</span>
+                    </div>
+                    <div class="mt-3 w-full bg-emerald-50 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+                        <div id="barCompleted" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Marked for Deletion / Eliminate -->
+                <div onclick="app.setFilter('for_deletion')" class="bg-white dark:bg-obsidian-surface rounded-2xl border border-rose-200/80 dark:border-rose-500/25 hover:border-rose-400 dark:hover:border-rose-500/60 p-4 shadow-sm dark:shadow-lg dark:shadow-black/20 flex flex-col justify-between transition-all cursor-pointer">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400">For Deletion</span>
+                        <button id="purgeDeletedBtn" onclick="event.stopPropagation(); app.requestPurgeDeleted()" class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30 hover:bg-rose-100 dark:hover:bg-rose-500/25 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none" title="Permanently remove all tasks marked for deletion">
+                            <i class="ph-bold ph-trash"></i>
+                            <span>Purge</span>
+                        </button>
+                    </div>
+                    <div class="mt-2 flex items-baseline justify-between">
+                        <span id="statDeletion" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">0</span>
+                        <span id="pctDeletion" class="text-xs font-semibold text-rose-600 dark:text-rose-400">0%</span>
+                    </div>
+                    <div class="mt-3 w-full bg-rose-50 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
+                        <div id="barDeletion" class="bg-rose-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quadrant Distribution Pills, Focus Score & Filter/Search Bar -->
+            <div class="bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-200/90 dark:border-obsidian-border p-3.5 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                <!-- Quadrant Summary Pills & High-Impact Focus Ratio -->
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="font-semibold text-slate-500 dark:text-slate-400 mr-0.5">Matrix:</span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-500/30 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        Do First: <strong id="pillQ1">0</strong>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                        Schedule: <strong id="pillQ2">0</strong>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        Delegate: <strong id="pillQ3">0</strong>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-medium">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                        Eliminate: <strong id="pillQ4">0</strong>
+                    </span>
+                    <span id="focusScoreBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 font-semibold" title="Percentage of your tasks in High-Importance Quadrants (Q1 + Q2)">
+                        <i class="ph-bold ph-chart-line-up"></i>
+                        <span>High-Impact Focus: <strong id="focusScoreText">0%</strong></span>
+                    </span>
+                </div>
+
+                <!-- Status Filter Buttons & Search Input -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div id="filterGroup" class="inline-flex rounded-xl bg-slate-100 dark:bg-slate-900 p-1 border border-slate-200/70 dark:border-slate-800 overflow-x-auto">
+                        <button data-filter="all" onclick="app.setFilter('all')" class="filter-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs transition-all whitespace-nowrap cursor-pointer">All Tasks</button>
+                        <button data-filter="in_progress" onclick="app.setFilter('in_progress')" class="filter-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap cursor-pointer">In Progress</button>
+                        <button data-filter="completed" onclick="app.setFilter('completed')" class="filter-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap cursor-pointer">Completed</button>
+                        <button data-filter="for_deletion" onclick="app.setFilter('for_deletion')" class="filter-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap cursor-pointer">For Deletion</button>
+                    </div>
+
+                    <div class="relative min-w-[190px]">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" oninput="app.setSearch(this.value)" placeholder="Filter tasks..." class="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+                        <button id="clearSearchBtn" onclick="app.clearSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                            <i class="ph-bold ph-x text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Quick Task Entry Bar with Smart Auto-Sort Indicator -->
+        <section aria-label="Add New Task" class="bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-200/90 dark:border-obsidian-border shadow-sm dark:shadow-lg dark:shadow-black/20 p-4">
+            <form id="taskForm" onsubmit="app.handleAddTask(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                <!-- Task Title -->
+                <div class="md:col-span-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="taskTitle" class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Task Title <span class="text-rose-500">*</span></label>
+                        <span id="smartHintBadge" class="hidden text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                            <i class="ph-fill ph-sparkle"></i>
+                            <span id="smartHintText">Auto-sorted</span>
+                        </span>
+                    </div>
+                    <input type="text" id="taskTitle" oninput="app.handleSmartSuggest()" required maxlength="140" placeholder="e.g., Urgent client proposal due today..." class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+                </div>
+
+                <!-- Optional Note / Due Time -->
+                <div class="md:col-span-3">
+                    <label for="taskNote" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Due Time / Note <span class="text-slate-400 dark:text-slate-500 font-normal">(optional)</span></label>
+                    <input type="text" id="taskNote" oninput="app.handleSmartSuggest()" maxlength="120" placeholder="e.g., Due 3:00 PM • Send PDF" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all">
+                </div>
+
+                <!-- Eisenhower Quadrant Selector -->
+                <div class="md:col-span-3">
+                    <label for="taskQuadrant" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Eisenhower Quadrant</label>
+                    <select id="taskQuadrant" onchange="app.onManualQuadrantChange()" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900/90 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/80 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all cursor-pointer">
+                        <option value="q1">Q1: Urgent &amp; Important (Do First)</option>
+                        <option value="q2">Q2: Not Urgent &amp; Important (Schedule)</option>
+                        <option value="q3">Q3: Urgent &amp; Not Important (Delegate)</option>
+                        <option value="q4">Q4: Not Urgent &amp; Not Important (Eliminate)</option>
+                    </select>
+                </div>
+
+                <!-- Initial Status + Add Button -->
+                <div class="md:col-span-2 flex gap-2">
+                    <div class="flex-1 min-w-0">
+                        <label for="taskStatus" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Status</label>
+                        <select id="taskStatus" class="w-full px-2.5 py-2 text-sm bg-slate-50 dark:bg-slate-900/90 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/80 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all cursor-pointer">
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="for_deletion">For Deletion</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="self-end px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-600/25 transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+                        <i class="ph-bold ph-plus text-base"></i>
+                        <span>Add</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Section 3: Interactive 2x2 Eisenhower Matrix Board -->
+        <main aria-label="Eisenhower Matrix Board" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+            <!-- QUADRANT 1: Urgent & Important — DO FIRST (Rose / Crimson Accent) -->
+            <section data-quadrant="q1" ondragover="app.handleDragOver(event)" ondragleave="app.handleDragLeave(event)" ondrop="app.handleDrop(event, 'q1')" class="quadrant-dropzone bg-white dark:bg-obsidian-surface rounded-2xl border border-rose-200/90 dark:border-rose-500/30 shadow-sm dark:shadow-xl dark:shadow-black/25 flex flex-col min-h-[290px] overflow-hidden">
+                <div class="px-4 py-3 bg-rose-50/70 dark:bg-rose-950/35 border-b border-rose-100 dark:border-rose-500/20 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-rose-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shadow-rose-600/30">Q1</span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-bold text-slate-900 dark:text-white">DO FIRST</h2>
+                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-transparent dark:border-rose-500/30">Urgent &amp; Important</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Crises, strict deadlines, immediate high-impact tasks</p>
+                        </div>
+                    </div>
+                    <span id="count-q1" class="text-xs font-bold px-2.5 py-1 rounded-full bg-white dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-500/30">0</span>
+                </div>
+                <div id="list-q1" class="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[440px]"></div>
+            </section>
+
+            <!-- QUADRANT 2: Not Urgent & Important — SCHEDULE (Indigo / Sapphire Accent) -->
+            <section data-quadrant="q2" ondragover="app.handleDragOver(event)" ondragleave="app.handleDragLeave(event)" ondrop="app.handleDrop(event, 'q2')" class="quadrant-dropzone bg-white dark:bg-obsidian-surface rounded-2xl border border-indigo-200/90 dark:border-indigo-500/30 shadow-sm dark:shadow-xl dark:shadow-black/25 flex flex-col min-h-[290px] overflow-hidden">
+                <div class="px-4 py-3 bg-indigo-50/70 dark:bg-indigo-950/35 border-b border-indigo-100 dark:border-indigo-500/20 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shadow-indigo-600/30">Q2</span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-bold text-slate-900 dark:text-white">SCHEDULE</h2>
+                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-transparent dark:border-indigo-500/30">Not Urgent &amp; Important</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Strategic planning, deep work, skill growth &amp; prevention</p>
+                        </div>
+                    </div>
+                    <span id="count-q2" class="text-xs font-bold px-2.5 py-1 rounded-full bg-white dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">0</span>
+                </div>
+                <div id="list-q2" class="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[440px]"></div>
+            </section>
+
+            <!-- QUADRANT 3: Urgent & Not Important — DELEGATE (Amber / Gold Accent) -->
+            <section data-quadrant="q3" ondragover="app.handleDragOver(event)" ondragleave="app.handleDragLeave(event)" ondrop="app.handleDrop(event, 'q3')" class="quadrant-dropzone bg-white dark:bg-obsidian-surface rounded-2xl border border-amber-200/90 dark:border-amber-500/30 shadow-sm dark:shadow-xl dark:shadow-black/25 flex flex-col min-h-[290px] overflow-hidden">
+                <div class="px-4 py-3 bg-amber-50/70 dark:bg-amber-950/30 border-b border-amber-100 dark:border-amber-500/20 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center shadow-sm shadow-amber-500/30">Q3</span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-bold text-slate-900 dark:text-white">DELEGATE</h2>
+                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-transparent dark:border-amber-500/30">Urgent &amp; Not Important</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Interruptions, routine requests, tasks others can handle</p>
+                        </div>
+                    </div>
+                    <span id="count-q3" class="text-xs font-bold px-2.5 py-1 rounded-full bg-white dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">0</span>
+                </div>
+                <div id="list-q3" class="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[440px]"></div>
+            </section>
+
+            <!-- QUADRANT 4: Not Urgent & Not Important — ELIMINATE / FOR DELETION (Cool Slate Accent) -->
+            <section data-quadrant="q4" ondragover="app.handleDragOver(event)" ondragleave="app.handleDragLeave(event)" ondrop="app.handleDrop(event, 'q4')" class="quadrant-dropzone bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-300/90 dark:border-slate-700/80 shadow-sm dark:shadow-xl dark:shadow-black/25 flex flex-col min-h-[290px] overflow-hidden">
+                <div class="px-4 py-3 bg-slate-100/90 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700/70 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-7 h-7 rounded-lg bg-slate-600 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center shadow-xs">Q4</span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-bold text-slate-900 dark:text-white">ELIMINATE / FOR DELETION</h2>
+                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700/90 text-slate-700 dark:text-slate-300">Not Urgent &amp; Not Important</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Distractions, low-value busywork &amp; tasks queued for removal</p>
+                        </div>
+                    </div>
+                    <span id="count-q4" class="text-xs font-bold px-2.5 py-1 rounded-full bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">0</span>
+                </div>
+                <div id="list-q4" class="p-3.5 flex-1 space-y-2.5 overflow-y-auto max-h-[440px]"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces window.confirm) -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-md w-full p-5 space-y-4">
+            <div class="flex items-start gap-3">
+                <div id="confirmIconBox" class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <i id="confirmIcon" class="ph-bold ph-warning-circle text-xl"></i>
+                </div>
+                <div>
+                    <h3 id="confirmTitle" class="text-base font-bold text-slate-900 dark:text-white">Confirm Action</h3>
+                    <p id="confirmMessage" class="text-sm text-slate-600 dark:text-slate-300 mt-1">Are you sure you want to proceed?</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button onclick="app.closeConfirmModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer">Cancel</button>
+                <button id="confirmActionBtn" class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-colors cursor-pointer">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Google Sites Embed Helper Modal -->
+    <div id="embedModal" class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-obsidian-surface rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-xl w-full overflow-hidden">
+            <div class="px-5 py-4 bg-slate-50 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+                        <i class="ph-bold ph-browsers text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Embed in Google Sites</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Add this Dark Mode planner directly onto any Google Site page</p>
+                    </div>
+                </div>
+                <button onclick="app.toggleEmbedModal(false)" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <i class="ph-bold ph-x text-base"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                <div class="space-y-2.5">
+                    <div class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <p><strong class="text-slate-900 dark:text-white">Open Google Sites:</strong> Navigate to your site editor at <span class="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">sites.google.com</span> (Tip: choose a dark theme in Google Sites for a seamless match).</p>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <p><strong class="text-slate-900 dark:text-white">Insert Embed Block:</strong> In the right sidebar, click <strong class="text-slate-900 dark:text-white">Insert &rarr; Embed</strong>.</p>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <p><strong class="text-slate-900 dark:text-white">Choose "Embed code" or "By URL":</strong> Paste your hosted URL, or select <strong class="text-slate-900 dark:text-white">Embed code</strong> and paste this single HTML file directly.</p>
+                    </div>
+                    <div class="flex items-start gap-2.5">
+                        <span class="w-5 h-5 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">4</span>
+                        <p><strong class="text-slate-900 dark:text-white">Resize Widget:</strong> Drag the bottom handle of the embed frame to full width (12 columns) and ~920px height.</p>
+                    </div>
+                </div>
+
+                <!-- Copyable HTML/Iframe Snippet -->
+                <div class="bg-slate-50 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 p-3 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Responsive Dark Iframe Wrapper Snippet</span>
+                        <button onclick="app.copyEmbedSnippet()" class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer">
+                            <i class="ph-bold ph-copy"></i>
+                            <span>Copy Snippet</span>
+                        </button>
+                    </div>
+                    <textarea id="embedSnippetText" readonly rows="3" class="w-full text-xs font-mono bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-slate-700 dark:text-slate-300 focus:outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                <button onclick="app.toggleEmbedModal(false)" class="px-4 py-2 text-xs font-semibold bg-slate-900 dark:bg-blue-600 text-white rounded-xl hover:bg-slate-800 dark:hover:bg-blue-500 transition-colors cursor-pointer">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Eisenhower Matrix Daily Productivity Command Center
+         * Features:
+         * - Default Obsidian Dark Mode with Light Mode toggle
+         * - Smart Keyword Auto-Categorization & Quadrant Rules
+         * - Next Best Action Spotlight + Built-in 25-min Pomodoro Timer
+         * - Daily Rollover Automation (archives completed, promotes aged Q2 -> Q1)
+         * - Full localStorage persistence, drag-and-drop, keyboard shortcuts & JSON backup
+         */
+        const app = (() => {
+            const STORAGE_KEY = 'eisenhower_planner_tasks_v1';
+            const META_KEY = 'eisenhower_planner_meta_v1';
+            const SAMPLE_FLAG_KEY = 'eisenhower_planner_samples_seeded_v1';
+
+            // Application State
+            let state = {
+                tasks: [],
+                filter: 'all',
+                search: '',
+                draggedTaskId: null,
+                manualQuadrantOverride: false,
+                meta: {
+                    theme: 'dark',
+                    lifetimeCompleted: 0,
+                    rules: {
+                        autoCategorize: true,
+                        autoDeleteQ4: true,
+                        autoStartQ1: true
+                    }
+                },
+                pomodoro: {
+                    secondsLeft: 25 * 60,
+                    running: false,
+                    intervalId: null
+                }
+            };
+
+            // Pre-populated sample tasks for first-time visitors
+            const SAMPLE_TASKS = [
+                {
+                    id: 'sample-1',
+                    title: 'Submit client Q4 project deliverables & executive summary',
+                    note: 'Due Today 4:00 PM • High priority',
+                    quadrant: 'q1',
+                    status: 'in_progress',
+                    isSample: true,
+                    createdAt: Date.now() - 3600000
+                },
+                {
+                    id: 'sample-2',
+                    title: 'Outline next month’s OKRs and weekly deep-work blocks',
+                    note: 'Friday Strategy Session',
+                    quadrant: 'q2',
+                    status: 'todo',
+                    isSample: true,
+                    createdAt: Date.now() - 2700000
+                },
+                {
+                    id: 'sample-3',
+                    title: 'Assign routine vendor invoice verification to ops coordinator',
+                    note: 'Forward template via email',
+                    quadrant: 'q3',
+                    status: 'completed',
+                    isSample: true,
+                    createdAt: Date.now() - 1800000
+                },
+                {
+                    id: 'sample-4',
+                    title: 'Unsubscribe from redundant promotional newsletters & old Slack channels',
+                    note: 'Low-value clutter',
+                    quadrant: 'q4',
+                    status: 'for_deletion',
+                    isSample: true,
+                    createdAt: Date.now() - 900000
+                }
+            ];
+
+            // Status visual configurations (Dark & Light friendly)
+            const STATUS_META = {
+                todo: {
+                    label: 'To Do',
+                    badgeClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+                    dotClass: 'bg-slate-400'
+                },
+                in_progress: {
+                    label: 'In Progress',
+                    badgeClass: 'bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30',
+                    dotClass: 'bg-blue-500'
+                },
+                completed: {
+                    label: 'Completed',
+                    badgeClass: 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30',
+                    dotClass: 'bg-emerald-500'
+                },
+                for_deletion: {
+                    label: 'For Deletion',
+                    badgeClass: 'bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30',
+                    dotClass: 'bg-rose-500'
+                }
+            };
+
+            // Keyword Dictionaries for Smart Auto-Categorization
+            const KEYWORD_RULES = [
+                {
+                    quadrant: 'q1',
+                    label: 'Q1 (Urgent & Important)',
+                    words: ['urgent', 'asap', 'today', 'deadline', 'crisis', 'bug', 'fix', 'client', 'overdue', 'submit', 'now', 'emergency', 'critical']
+                },
+                {
+                    quadrant: 'q3',
+                    label: 'Q3 (Delegate)',
+                    words: ['delegate', 'forward', 'reply', 'email', 'schedule call', 'invoice', 'admin', 'routine', 'assign', 'ask ', 'follow up']
+                },
+                {
+                    quadrant: 'q4',
+                    label: 'Q4 (Eliminate)',
+                    words: ['someday', 'maybe', 'later', 'unsubscribe', 'clean', 'scroll', 'browse', 'trivial', 'clutter', 'delete', 'drop']
+                },
+                {
+                    quadrant: 'q2',
+                    label: 'Q2 (Schedule)',
+                    words: ['plan', 'strategy', 'roadmap', 'okr', 'goal', 'learn', 'research', 'design', 'build', 'workout', 'review', 'deep work']
+                }
+            ];
+
+            // Initialize Application
+            function init() {
+                setFormattedDate();
+                loadMeta();
+                applyTheme(state.meta.theme);
+                syncRuleCheckboxes();
+                loadTasks();
+                populateEmbedSnippet();
+                registerKeyboardShortcuts();
+                render();
+            }
+
+            // Keyboard Shortcuts (N or / to focus input, 1-4 to pick quadrant)
+            function registerKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    const tag = document.activeElement.tagName.toLowerCase();
+                    const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+                    if (!isTyping && (e.key === 'n' || e.key === 'N' || e.key === '/')) {
+                        e.preventDefault();
+                        const titleEl = document.getElementById('taskTitle');
+                        if (titleEl) titleEl.focus();
+                    } else if (!isTyping && ['1', '2', '3', '4'].includes(e.key)) {
+                        const qMap = { '1': 'q1', '2': 'q2', '3': 'q3', '4': 'q4' };
+                        const qSelect = document.getElementById('taskQuadrant');
+                        if (qSelect) {
+                            qSelect.value = qMap[e.key];
+                            onManualQuadrantChange();
+                            showToast(`Quick-selected ${getQuadrantLabel(qMap[e.key])}`, 'info');
+                        }
+                    } else if (e.key === 'Escape') {
+                        closeConfirmModal();
+                        toggleEmbedModal(false);
+                    }
+                });
+            }
+
+            function setFormattedDate() {
+                const dateEl = document.getElementById('currentDateText');
+                if (!dateEl) return;
+                const now = new Date();
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                dateEl.textContent = now.toLocaleDateString('en-US', options);
+            }
+
+            function loadMeta() {
+                try {
+                    const rawMeta = localStorage.getItem(META_KEY);
+                    if (rawMeta) {
+                        const parsed = JSON.parse(rawMeta);
+                        state.meta = {
+                            ...state.meta,
+                            ...parsed,
+                            rules: { ...state.meta.rules, ...(parsed.rules || {}) }
+                        };
+                    }
+                } catch (err) {
+                    console.error('Error loading metadata:', err);
+                }
+            }
+
+            function saveMeta() {
+                try {
+                    localStorage.setItem(META_KEY, JSON.stringify(state.meta));
+                } catch (err) {
+                    console.error('Error saving metadata:', err);
+                }
+            }
+
+            function applyTheme(theme) {
+                const htmlEl = document.documentElement;
+                const iconEl = document.getElementById('themeIcon');
+                if (theme === 'dark') {
+                    htmlEl.classList.add('dark');
+                    if (iconEl) iconEl.className = 'ph-bold ph-sun text-base';
+                } else {
+                    htmlEl.classList.remove('dark');
+                    if (iconEl) iconEl.className = 'ph-bold ph-moon text-base';
+                }
+            }
+
+            function toggleTheme() {
+                state.meta.theme = state.meta.theme === 'dark' ? 'light' : 'dark';
+                applyTheme(state.meta.theme);
+                saveMeta();
+                showToast(`Switched to ${state.meta.theme === 'dark' ? 'Night Mode' : 'Light Mode'}`, 'info');
+            }
+
+            function toggleAutomationDrawer() {
+                const drawer = document.getElementById('automationDrawer');
+                drawer.classList.toggle('hidden');
+            }
+
+            function syncRuleCheckboxes() {
+                const r1 = document.getElementById('ruleAutoCategorize');
+                const r2 = document.getElementById('ruleAutoDeleteQ4');
+                const r3 = document.getElementById('ruleAutoStartQ1');
+                if (r1) r1.checked = state.meta.rules.autoCategorize;
+                if (r2) r2.checked = state.meta.rules.autoDeleteQ4;
+                if (r3) r3.checked = state.meta.rules.autoStartQ1;
+            }
+
+            function toggleRule(ruleKey, enabled) {
+                state.meta.rules[ruleKey] = enabled;
+                saveMeta();
+                showToast(`Automation rule ${enabled ? 'enabled' : 'paused'}`, 'info');
+            }
+
+            function loadTasks() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    const seeded = localStorage.getItem(SAMPLE_FLAG_KEY);
+
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            state.tasks = parsed;
+                            return;
+                        }
+                    }
+
+                    if (!seeded) {
+                        state.tasks = [...SAMPLE_TASKS];
+                        localStorage.setItem(SAMPLE_FLAG_KEY, 'true');
+                        saveTasks();
+                    }
+                } catch (err) {
+                    console.error('Error loading tasks:', err);
+                    state.tasks = [...SAMPLE_TASKS];
+                }
+            }
+
+            function saveTasks() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+                } catch (err) {
+                    console.error('Error saving tasks:', err);
+                    showToast('Unable to save to browser storage.', 'error');
+                }
+            }
+
+            // Smart Keyword Auto-Categorizer as user types
+            function handleSmartSuggest() {
+                if (!state.meta.rules.autoCategorize || state.manualQuadrantOverride) return;
+
+                const title = document.getElementById('taskTitle').value.toLowerCase();
+                const note = document.getElementById('taskNote').value.toLowerCase();
+                const combined = `${title} ${note}`.trim();
+                const hintBadge = document.getElementById('smartHintBadge');
+                const hintText = document.getElementById('smartHintText');
+
+                if (!combined) {
+                    hintBadge.classList.add('hidden');
+                    return;
+                }
+
+                for (const rule of KEYWORD_RULES) {
+                    if (rule.words.some(w => combined.includes(w))) {
+                        const qSelect = document.getElementById('taskQuadrant');
+                        qSelect.value = rule.quadrant;
+                        applyQuadrantStatusAutomation(rule.quadrant);
+                        hintText.textContent = `Auto-sorted to ${rule.label}`;
+                        hintBadge.classList.remove('hidden');
+                        return;
+                    }
+                }
+
+                hintBadge.classList.add('hidden');
+            }
+
+            function onManualQuadrantChange() {
+                state.manualQuadrantOverride = true;
+                document.getElementById('smartHintBadge').classList.add('hidden');
+                const quadrantVal = document.getElementById('taskQuadrant').value;
+                applyQuadrantStatusAutomation(quadrantVal);
+            }
+
+            function applyQuadrantStatusAutomation(quadrantVal) {
+                const statusEl = document.getElementById('taskStatus');
+                if (quadrantVal === 'q4' && state.meta.rules.autoDeleteQ4) {
+                    statusEl.value = 'for_deletion';
+                } else if (quadrantVal === 'q1' && state.meta.rules.autoStartQ1) {
+                    const hasActiveQ1 = state.tasks.some(t => t.quadrant === 'q1' && t.status === 'in_progress');
+                    statusEl.value = hasActiveQ1 ? 'todo' : 'in_progress';
+                } else if (statusEl.value === 'for_deletion' && quadrantVal !== 'q4') {
+                    statusEl.value = 'todo';
+                }
+            }
+
+            function handleAddTask(event) {
+                event.preventDefault();
+                const titleInput = document.getElementById('taskTitle');
+                const noteInput = document.getElementById('taskNote');
+                const quadrantSelect = document.getElementById('taskQuadrant');
+                const statusSelect = document.getElementById('taskStatus');
+
+                const title = titleInput.value.trim();
+                if (!title) return;
+
+                const newTask = {
+                    id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+                    title: title,
+                    note: noteInput.value.trim(),
+                    quadrant: quadrantSelect.value,
+                    status: statusSelect.value,
+                    isSample: false,
+                    createdAt: Date.now()
+                };
+
+                state.tasks.unshift(newTask);
+                saveTasks();
+                render();
+
+                // Reset form & smart override state
+                titleInput.value = '';
+                noteInput.value = '';
+                state.manualQuadrantOverride = false;
+                document.getElementById('smartHintBadge').classList.add('hidden');
+                titleInput.focus();
+                showToast('Added to ' + getQuadrantLabel(newTask.quadrant), 'success');
+            }
+
+            function updateTaskStatus(taskId, newStatus) {
+                const task = state.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                task.status = newStatus;
+                saveTasks();
+                render();
+            }
+
+            function moveTaskQuadrant(taskId, newQuadrant) {
+                const task = state.tasks.find(t => t.id === taskId);
+                if (!task || task.quadrant === newQuadrant) return;
+                task.quadrant = newQuadrant;
+                if (newQuadrant === 'q4' && state.meta.rules.autoDeleteQ4 && task.status === 'todo') {
+                    task.status = 'for_deletion';
+                }
+                saveTasks();
+                render();
+                showToast('Moved to ' + getQuadrantLabel(newQuadrant), 'info');
+            }
+
+            function deleteTask(taskId) {
+                state.tasks = state.tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                render();
+                showToast('Task removed', 'info');
+            }
+
+            function clearSampleTasks() {
+                const beforeCount = state.tasks.length;
+                state.tasks = state.tasks.filter(t => !t.isSample);
+                if (state.tasks.length !== beforeCount) {
+                    saveTasks();
+                    render();
+                    showToast('Sample tasks cleared!', 'success');
+                }
+            }
+
+            // Batch Automation Actions
+            function bulkActivateQ1() {
+                let changed = 0;
+                state.tasks.forEach(t => {
+                    if (t.quadrant === 'q1' && t.status === 'todo') {
+                        t.status = 'in_progress';
+                        changed++;
+                    }
+                });
+                saveTasks();
+                render();
+                showToast(changed > 0 ? `Started ${changed} Q1 task(s)` : 'No Q1 "To Do" tasks to start', 'info');
+            }
+
+            function bulkFlagQ4ForDeletion() {
+                let changed = 0;
+                state.tasks.forEach(t => {
+                    if (t.quadrant === 'q4' && t.status !== 'for_deletion') {
+                        t.status = 'for_deletion';
+                        changed++;
+                    }
+                });
+                saveTasks();
+                render();
+                showToast(changed > 0 ? `Flagged ${changed} Q4 task(s) for deletion` : 'All Q4 tasks already flagged', 'info');
+            }
+
+            // Daily Rollover Automation
+            function requestDailyRollover() {
+                const completedCount = state.tasks.filter(t => t.status === 'completed').length;
+                const agedQ2Count = state.tasks.filter(t => t.quadrant === 'q2' && t.status !== 'completed' && (Date.now() - t.createdAt) > 86400000).length;
+
+                openConfirmModal({
+                    title: 'Run New Day Rollover?',
+                    message: `This will archive ${completedCount} completed task(s) into your All-Time Streak, promote ${agedQ2Count} aged Q2 task(s) to Q1 Do First, and flag stale Q4 tasks for deletion.`,
+                    confirmLabel: 'Run Rollover',
+                    accent: 'indigo',
+                    onConfirm: () => {
+                        let archived = 0;
+                        let promoted = 0;
+                        const remaining = [];
+
+                        state.tasks.forEach(task => {
+                            if (task.status === 'completed') {
+                                archived++;
+                                return;
+                            }
+                            // Promote Q2 tasks older than 24 hours to Q1
+                            if (task.quadrant === 'q2' && (Date.now() - task.createdAt) > 86400000) {
+                                task.quadrant = 'q1';
+                                promoted++;
+                            }
+                            // Flag Q4 tasks older than 24 hours for deletion
+                            if (task.quadrant === 'q4' && (Date.now() - task.createdAt) > 86400000) {
+                                task.status = 'for_deletion';
+                            }
+                            remaining.push(task);
+                        });
+
+                        state.tasks = remaining;
+                        state.meta.lifetimeCompleted = (state.meta.lifetimeCompleted || 0) + archived;
+                        saveTasks();
+                        saveMeta();
+                        render();
+                        showToast(`Rollover complete: ${archived} archived, ${promoted} promoted to Q1.`, 'success');
+                    }
+                });
+            }
+
+            function isTaskMarkedForDeletion(task) {
+                return task.status === 'for_deletion' || task.quadrant === 'q4';
+            }
+
+            function requestPurgeDeleted() {
+                const deletableCount = state.tasks.filter(isTaskMarkedForDeletion).length;
+                if (deletableCount === 0) {
+                    showToast('No tasks are currently marked for deletion.', 'info');
+                    return;
+                }
+
+                openConfirmModal({
+                    title: 'Purge Deleted Tasks?',
+                    message: `Permanently delete ${deletableCount} task${deletableCount > 1 ? 's' : ''} marked "For Deletion" or in Quadrant 4 (Eliminate)?`,
+                    confirmLabel: 'Confirm Purge',
+                    accent: 'rose',
+                    onConfirm: () => {
+                        state.tasks = state.tasks.filter(t => !isTaskMarkedForDeletion(t));
+                        saveTasks();
+                        render();
+                        showToast(`Purged ${deletableCount} task${deletableCount > 1 ? 's' : ''}.`, 'success');
+                    }
+                });
+            }
+
+            function openConfirmModal({ title, message, confirmLabel, accent = 'rose', onConfirm }) {
+                const modal = document.getElementById('confirmModal');
+                const titleEl = document.getElementById('confirmTitle');
+                const msgEl = document.getElementById('confirmMessage');
+                const btnEl = document.getElementById('confirmActionBtn');
+                const iconBox = document.getElementById('confirmIconBox');
+                const iconEl = document.getElementById('confirmIcon');
+
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                btnEl.textContent = confirmLabel;
+
+                if (accent === 'indigo') {
+                    iconBox.className = 'w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-500 dark:text-indigo-400 flex items-center justify-center shrink-0';
+                    iconEl.className = 'ph-bold ph-sun-horizon text-xl';
+                    btnEl.className = 'px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors cursor-pointer';
+                } else {
+                    iconBox.className = 'w-10 h-10 rounded-xl bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0';
+                    iconEl.className = 'ph-bold ph-warning-circle text-xl';
+                    btnEl.className = 'px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl transition-colors cursor-pointer';
+                }
+
+                btnEl.onclick = () => {
+                    onConfirm();
+                    closeConfirmModal();
+                };
+
+                modal.classList.remove('hidden');
+            }
+
+            function closeConfirmModal() {
+                document.getElementById('confirmModal').classList.add('hidden');
+            }
+
+            // Next Best Action Spotlight Logic
+            function getSpotlightTask() {
+                const priorityOrder = [
+                    t => t.quadrant === 'q1' && t.status === 'in_progress',
+                    t => t.quadrant === 'q1' && t.status === 'todo',
+                    t => t.quadrant === 'q2' && t.status === 'in_progress',
+                    t => t.quadrant === 'q2' && t.status === 'todo',
+                    t => t.quadrant === 'q3' && (t.status === 'in_progress' || t.status === 'todo')
+                ];
+                for (const matcher of priorityOrder) {
+                    const found = state.tasks.find(matcher);
+                    if (found) return found;
+                }
+                return null;
+            }
+
+            function completeSpotlightTask() {
+                const task = getSpotlightTask();
+                if (!task) return;
+                updateTaskStatus(task.id, 'completed');
+                showToast('Spotlight task completed!', 'success');
+            }
+
+            // Built-in 25-Min Pomodoro Focus Timer
+            function togglePomodoro() {
+                const btn = document.getElementById('pomodoroToggleBtn');
+                if (state.pomodoro.running) {
+                    clearInterval(state.pomodoro.intervalId);
+                    state.pomodoro.running = false;
+                    btn.textContent = 'Resume';
+                } else {
+                    // Auto-promote spotlight task to In Progress if it is currently To Do
+                    const spotlight = getSpotlightTask();
+                    if (spotlight && spotlight.status === 'todo') {
+                        updateTaskStatus(spotlight.id, 'in_progress');
+                    }
+                    state.pomodoro.running = true;
+                    btn.textContent = 'Pause';
+                    state.pomodoro.intervalId = setInterval(() => {
+                        if (state.pomodoro.secondsLeft > 0) {
+                            state.pomodoro.secondsLeft--;
+                            renderPomodoroDisplay();
+                        } else {
+                            clearInterval(state.pomodoro.intervalId);
+                            state.pomodoro.running = false;
+                            btn.textContent = 'Start';
+                            showToast('25-minute focus sprint complete! Take a 5-min break.', 'success');
+                        }
+                    }, 1000);
+                }
+            }
+
+            function resetPomodoro() {
+                clearInterval(state.pomodoro.intervalId);
+                state.pomodoro.running = false;
+                state.pomodoro.secondsLeft = 25 * 60;
+                const btn = document.getElementById('pomodoroToggleBtn');
+                if (btn) btn.textContent = 'Start';
+                renderPomodoroDisplay();
+            }
+
+            function renderPomodoroDisplay() {
+                const el = document.getElementById('pomodoroDisplay');
+                if (!el) return;
+                const mins = String(Math.floor(state.pomodoro.secondsLeft / 60)).padStart(2, '0');
+                const secs = String(state.pomodoro.secondsLeft % 60).padStart(2, '0');
+                el.textContent = `${mins}:${secs}`;
+            }
+
+            // Filter & Search Handlers
+            function setFilter(filterKey) {
+                state.filter = filterKey;
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    const isActive = btn.getAttribute('data-filter') === filterKey;
+                    if (isActive) {
+                        btn.className = 'filter-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs transition-all whitespace-nowrap cursor-pointer';
+                    } else {
+                        btn.className = 'filter-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all whitespace-nowrap cursor-pointer';
+                    }
+                });
+                render();
+            }
+
+            function setSearch(query) {
+                state.search = query.trim().toLowerCase();
+                const clearBtn = document.getElementById('clearSearchBtn');
+                if (state.search.length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+                render();
+            }
+
+            function clearSearch() {
+                const input = document.getElementById('searchInput');
+                input.value = '';
+                setSearch('');
+            }
+
+            // Drag and Drop Handlers
+            function handleDragStart(event, taskId) {
+                state.draggedTaskId = taskId;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', taskId);
+                event.currentTarget.classList.add('opacity-50');
+            }
+
+            function handleDragEnd(event) {
+                event.currentTarget.classList.remove('opacity-50');
+                document.querySelectorAll('.quadrant-dropzone').forEach(el => el.classList.remove('drag-over'));
+            }
+
+            function handleDragOver(event) {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                event.currentTarget.classList.add('drag-over');
+            }
+
+            function handleDragLeave(event) {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                    event.currentTarget.classList.remove('drag-over');
+                }
+            }
+
+            function handleDrop(event, targetQuadrant) {
+                event.preventDefault();
+                event.currentTarget.classList.remove('drag-over');
+                const taskId = event.dataTransfer.getData('text/plain') || state.draggedTaskId;
+                if (taskId) {
+                    moveTaskQuadrant(taskId, targetQuadrant);
+                }
+                state.draggedTaskId = null;
+            }
+
+            // Export / Import JSON Backup
+            function exportJSON() {
+                try {
+                    const dataStr = JSON.stringify({
+                        exportedAt: new Date().toISOString(),
+                        app: 'EisenhowerProductivityCommand',
+                        meta: state.meta,
+                        tasks: state.tasks
+                    }, null, 2);
+
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const dateStamp = new Date().toISOString().slice(0, 10);
+                    a.href = url;
+                    a.download = `eisenhower-planner-${dateStamp}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Backup JSON downloaded.', 'success');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Failed to export JSON backup.', 'error');
+                }
+            }
+
+            function importJSON(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        const importedTasks = Array.isArray(parsed) ? parsed : parsed.tasks;
+                        if (!Array.isArray(importedTasks)) {
+                            throw new Error('Invalid JSON structure');
+                        }
+                        const validQuadrants = ['q1', 'q2', 'q3', 'q4'];
+                        const validStatuses = ['todo', 'in_progress', 'completed', 'for_deletion'];
+
+                        const sanitized = importedTasks
+                            .filter(item => item && typeof item.title === 'string' && item.title.trim() !== '')
+                            .map((item, idx) => ({
+                                id: item.id || `imported-${Date.now()}-${idx}`,
+                                title: item.title.trim().slice(0, 140),
+                                note: typeof item.note === 'string' ? item.note.trim().slice(0, 120) : '',
+                                quadrant: validQuadrants.includes(item.quadrant) ? item.quadrant : 'q1',
+                                status: validStatuses.includes(item.status) ? item.status : 'todo',
+                                isSample: Boolean(item.isSample),
+                                createdAt: item.createdAt || Date.now()
+                            }));
+
+                        state.tasks = sanitized;
+                        if (parsed.meta && typeof parsed.meta.lifetimeCompleted === 'number') {
+                            state.meta.lifetimeCompleted = parsed.meta.lifetimeCompleted;
+                            saveMeta();
+                        }
+                        saveTasks();
+                        render();
+                        showToast(`Imported ${sanitized.length} tasks successfully.`, 'success');
+                    } catch (err) {
+                        console.error(err);
+                        showToast('Invalid JSON backup file.', 'error');
+                    } finally {
+                        event.target.value = '';
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            // Google Sites Embed Modal Helpers
+            function toggleEmbedModal(show) {
+                const modal = document.getElementById('embedModal');
+                if (show) {
+                    populateEmbedSnippet();
+                    modal.classList.remove('hidden');
+                } else {
+                    modal.classList.add('hidden');
+                }
+            }
+
+            function populateEmbedSnippet() {
+                const textarea = document.getElementById('embedSnippetText');
+                if (!textarea) return;
+                const currentUrl = window.location.href.startsWith('http')
+                    ? window.location.href
+                    : 'https://YOUR-HOSTED-PLANNER-URL.example.com';
+                textarea.value = `<iframe src="${currentUrl}" width="100%" height="920" frameborder="0" style="border:0; border-radius:16px; background:#0B0F19;" allowfullscreen></iframe>`;
+            }
+
+            function copyEmbedSnippet() {
+                const textarea = document.getElementById('embedSnippetText');
+                if (!textarea) return;
+                textarea.select();
+                textarea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    showToast('Embed snippet copied to clipboard!', 'success');
+                } catch (err) {
+                    showToast('Could not copy automatically. Please select and copy manually.', 'error');
+                }
+            }
+
+            // Toast Notification System
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+
+                const styles = {
+                    success: 'bg-slate-900 text-white border-emerald-500/40',
+                    error: 'bg-rose-950 text-white border-rose-500/50',
+                    info: 'bg-slate-900 text-white border-slate-700'
+                };
+                const icons = {
+                    success: 'ph-check-circle text-emerald-400',
+                    error: 'ph-warning-circle text-rose-400',
+                    info: 'ph-info text-blue-400'
+                };
+
+                toast.className = `pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border shadow-xl text-xs font-medium transition-all duration-200 ${styles[type] || styles.info}`;
+                toast.innerHTML = `<i class="ph-bold ${icons[type] || icons.info} text-base shrink-0"></i><span>${escapeHTML(message)}</span>`;
+
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-1');
+                    setTimeout(() => toast.remove(), 200);
+                }, 2600);
+            }
+
+            function getQuadrantLabel(q) {
+                const map = {
+                    q1: 'Q1: Do First',
+                    q2: 'Q2: Schedule',
+                    q3: 'Q3: Delegate',
+                    q4: 'Q4: Eliminate'
+                };
+                return map[q] || 'Matrix';
+            }
+
+            function escapeHTML(str) {
+                return str.replace(/[&<>"']/g, match => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[match]));
+            }
+
+            // Render Dashboard Metrics, Spotlight & Quadrant Lists
+            function render() {
+                const allTasks = state.tasks;
+                const total = allTasks.length;
+                const todoCount = allTasks.filter(t => t.status === 'todo').length;
+                const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
+                const completedCount = allTasks.filter(t => t.status === 'completed').length;
+                const deletionCount = allTasks.filter(isTaskMarkedForDeletion).length;
+
+                // Update Lifetime Completed Streak Badge
+                const lifetimeTotal = (state.meta.lifetimeCompleted || 0) + completedCount;
+                document.getElementById('lifetimeCompletedText').textContent = `${lifetimeTotal} All-Time Done`;
+
+                // Update Next Best Action Spotlight
+                const spotlight = getSpotlightTask();
+                const spotlightTitleEl = document.getElementById('spotlightTaskTitle');
+                const spotlightBadgeEl = document.getElementById('spotlightQuadrantBadge');
+                const spotlightCompleteBtn = document.getElementById('spotlightCompleteBtn');
+
+                if (spotlight) {
+                    spotlightTitleEl.textContent = spotlight.title;
+                    spotlightBadgeEl.textContent = getQuadrantLabel(spotlight.quadrant) + (spotlight.status === 'in_progress' ? ' • Active' : '');
+                    spotlightCompleteBtn.classList.remove('hidden');
+                } else {
+                    spotlightTitleEl.textContent = 'All priority tasks cleared! Add a new task below.';
+                    spotlightBadgeEl.textContent = 'Inbox Zero';
+                    spotlightCompleteBtn.classList.add('hidden');
+                }
+
+                // Update Top Dashboard Cards
+                document.getElementById('statTotal').textContent = total;
+                document.getElementById('statTodoSub').textContent = `${todoCount} To Do`;
+                document.getElementById('barTotal').style.width = total > 0 ? '100%' : '0%';
+
+                const pctInProg = total > 0 ? Math.round((inProgressCount / total) * 100) : 0;
+                document.getElementById('statInProgress').textContent = inProgressCount;
+                document.getElementById('pctInProgress').textContent = `${pctInProg}%`;
+                document.getElementById('barInProgress').style.width = `${pctInProg}%`;
+
+                const pctComp = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+                document.getElementById('statCompleted').textContent = completedCount;
+                document.getElementById('pctCompleted').textContent = `${pctComp}%`;
+                document.getElementById('barCompleted').style.width = `${pctComp}%`;
+
+                const pctDel = total > 0 ? Math.round((deletionCount / total) * 100) : 0;
+                document.getElementById('statDeletion').textContent = deletionCount;
+                document.getElementById('pctDeletion').textContent = `${pctDel}%`;
+                document.getElementById('barDeletion').style.width = `${pctDel}%`;
+
+                // Enable/Disable Purge Button
+                document.getElementById('purgeDeletedBtn').disabled = deletionCount === 0;
+
+                // Toggle "Clear Sample Tasks" button visibility
+                const hasSamples = allTasks.some(t => t.isSample);
+                const clearSampleBtn = document.getElementById('clearSamplesBtn');
+                clearSampleBtn.classList.toggle('hidden', !hasSamples);
+
+                // Update Quadrant Summary Pills & High-Impact Focus Ratio (Q1+Q2 vs Total)
+                ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+                    const qCount = allTasks.filter(t => t.quadrant === q).length;
+                    document.getElementById(`pill${q.toUpperCase()}`).textContent = qCount;
+                });
+
+                const importantCount = allTasks.filter(t => t.quadrant === 'q1' || t.quadrant === 'q2').length;
+                const focusRatio = total > 0 ? Math.round((importantCount / total) * 100) : 0;
+                document.getElementById('focusScoreText').textContent = `${focusRatio}%`;
+
+                // Apply Active Filter & Search for Board Display
+                const filteredTasks = allTasks.filter(task => {
+                    const matchesFilter =
+                        state.filter === 'all' ||
+                        (state.filter === 'in_progress' && task.status === 'in_progress') ||
+                        (state.filter === 'completed' && task.status === 'completed') ||
+                        (state.filter === 'for_deletion' && isTaskMarkedForDeletion(task));
+
+                    const matchesSearch =
+                        !state.search ||
+                        task.title.toLowerCase().includes(state.search) ||
+                        (task.note && task.note.toLowerCase().includes(state.search));
+
+                    return matchesFilter && matchesSearch;
+                });
+
+                // Render each Quadrant Column
+                ['q1', 'q2', 'q3', 'q4'].forEach(quadrantKey => {
+                    const container = document.getElementById(`list-${quadrantKey}`);
+                    const countBadge = document.getElementById(`count-${quadrantKey}`);
+                    const quadrantTasks = filteredTasks.filter(t => t.quadrant === quadrantKey);
+
+                    countBadge.textContent = quadrantTasks.length;
+
+                    if (quadrantTasks.length === 0) {
+                        container.innerHTML = `
+                            <div class="h-full min-h-[160px] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center p-4 text-slate-400 dark:text-slate-500">
+                                <i class="ph ph-tray text-2xl mb-1"></i>
+                                <p class="text-xs font-medium text-slate-500 dark:text-slate-400">No tasks in this quadrant</p>
+                                <p class="text-[11px] mt-0.5">Add a task above or drag any card here</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = quadrantTasks.map(task => renderTaskCard(task)).join('');
+                });
+            }
+
+            // Render Individual Task Card HTML
+            function renderTaskCard(task) {
+                const statusInfo = STATUS_META[task.status] || STATUS_META.todo;
+                const isCompleted = task.status === 'completed';
+                const isForDeletion = isTaskMarkedForDeletion(task);
+
+                const cardBorder = isForDeletion
+                    ? 'border-rose-200/80 dark:border-rose-500/30 bg-rose-50/30 dark:bg-rose-950/20'
+                    : isCompleted
+                    ? 'border-emerald-200/80 dark:border-emerald-500/25 bg-slate-50/70 dark:bg-slate-900/50'
+                    : 'border-slate-200/90 dark:border-slate-800 bg-white dark:bg-obsidian-elevated/90 hover:border-slate-300 dark:hover:border-slate-700';
+
+                return `
+                    <article draggable="true"
+                             ondragstart="app.handleDragStart(event, '${task.id}')"
+                             ondragend="app.handleDragEnd(event)"
+                             class="group rounded-xl border ${cardBorder} p-3 shadow-2xs transition-all cursor-grab active:cursor-grabbing">
+                        <div class="flex items-start justify-between gap-2.5">
+                            <!-- Quick Complete Checkbox + Title -->
+                            <div class="flex items-start gap-2.5 min-w-0 flex-1">
+                                <button onclick="app.updateTaskStatus('${task.id}', '${isCompleted ? 'todo' : 'completed'}')"
+                                        title="${isCompleted ? 'Mark as To Do' : 'Mark as Completed'}"
+                                        class="mt-0.5 w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-blue-500 bg-white dark:bg-slate-900'}">
+                                    ${isCompleted ? '<i class="ph-bold ph-check text-[11px]"></i>' : ''}
+                                </button>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium leading-snug break-words ${isCompleted ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-100'}">
+                                        ${escapeHTML(task.title)}
+                                    </p>
+                                    ${task.note ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1"><i class="ph ph-clock text-slate-400 dark:text-slate-500 shrink-0"></i><span class="truncate">${escapeHTML(task.note)}</span></p>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Delete Task Button -->
+                            <button onclick="app.deleteTask('${task.id}')" title="Delete task permanently" class="p-1 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/15 transition-colors shrink-0 cursor-pointer">
+                                <i class="ph ph-trash text-sm"></i>
+                            </button>
+                        </div>
+
+                        <!-- Card Footer Controls: Status Switcher & Quadrant Mover -->
+                        <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/90 flex flex-wrap items-center justify-between gap-2">
+                            <!-- Interactive Status Dropdown -->
+                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${statusInfo.badgeClass}">
+                                <span class="w-1.5 h-1.5 rounded-full ${statusInfo.dotClass}"></span>
+                                <select aria-label="Change task status"
+                                        onchange="app.updateTaskStatus('${task.id}', this.value)"
+                                        class="bg-transparent dark:bg-slate-900/0 focus:outline-none cursor-pointer pr-1">
+                                    <option class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
+                                    <option class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                    <option class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="completed" ${task.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                    <option class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="for_deletion" ${task.status === 'for_deletion' ? 'selected' : ''}>For Deletion</option>
+                                </select>
+                            </div>
+
+                            <!-- Quick Move Quadrant Selector -->
+                            <div class="inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                <i class="ph ph-arrows-out-cardinal text-slate-400 dark:text-slate-500"></i>
+                                <select aria-label="Move task to quadrant"
+                                        onchange="app.moveTaskQuadrant('${task.id}', this.value)"
+                                        class="bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg px-1.5 py-0.5 text-[11px] font-medium text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer">
+                                    <option value="q1" ${task.quadrant === 'q1' ? 'selected' : ''}>Q1: Do First</option>
+                                    <option value="q2" ${task.quadrant === 'q2' ? 'selected' : ''}>Q2: Schedule</option>
+                                    <option value="q3" ${task.quadrant === 'q3' ? 'selected' : ''}>Q3: Delegate</option>
+                                    <option value="q4" ${task.quadrant === 'q4' ? 'selected' : ''}>Q4: Eliminate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }
+
+            // Public API
+            return {
+                init,
+                toggleTheme,
+                toggleAutomationDrawer,
+                toggleRule,
+                handleSmartSuggest,
+                onManualQuadrantChange,
+                handleAddTask,
+                updateTaskStatus,
+                moveTaskQuadrant,
+                deleteTask,
+                clearSampleTasks,
+                bulkActivateQ1,
+                bulkFlagQ4ForDeletion,
+                requestDailyRollover,
+                requestPurgeDeleted,
+                closeConfirmModal,
+                completeSpotlightTask,
+                togglePomodoro,
+                resetPomodoro,
+                setFilter,
+                setSearch,
+                clearSearch,
+                handleDragStart,
+                handleDragEnd,
+                handleDragOver,
+                handleDragLeave,
+                handleDrop,
+                exportJSON,
+                importJSON,
+                toggleEmbedModal,
+                copyEmbedSnippet
+            };
+        })();
+
+        // Start application on DOM ready
+        window.addEventListener('DOMContentLoaded', app.init);
+    </script>
+</body>
+</html>
